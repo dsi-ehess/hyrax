@@ -61,28 +61,43 @@ RSpec.describe Hyrax::AdminSetService do
     let(:doc3) { SolrDocument.new(id: 'zxy123') }
     let(:connection) { instance_double(RSolr::Client) }
     let(:facets) { { 'isPartOf_ssim' => [doc1.id, 8, doc2.id, 2] } }
-    let(:document_list) do
-      [
-        {
-          'isPartOf_ssim' => ['xyz123'],
-          'file_set_ids_ssim' => ['aaa']
-        },
-        {
-          'isPartOf_ssim' => ['xyz123', 'yyx123'],
-          'file_set_ids_ssim' => ['bbb', 'ccc']
-        }
-      ]
-    end
 
     let(:results) do
       {
         'response' =>
           {
-            'docs' => document_list
+            'docs' => []
           },
         'facet_counts' =>
           {
             'facet_fields' => facets
+          }
+      }
+    end
+
+    let(:xyz123_file_results) do
+      {
+        'response' =>
+          {
+            'numFound' => xyz123_files
+          }
+      }
+    end
+
+    let(:yyx123_file_results) do
+      {
+        'response' =>
+          {
+            'numFound' => yyx123_files
+          }
+      }
+    end
+
+    let(:zxy123_file_results) do
+      {
+        'response' =>
+          {
+            'numFound' => zxy123_files
           }
       }
     end
@@ -93,26 +108,26 @@ RSpec.describe Hyrax::AdminSetService do
       allow(service).to receive(:search_results).and_return(documents)
       allow(ActiveFedora::SolrService.instance).to receive(:conn).and_return(connection)
       allow(connection).to receive(:get).with("select", params: { fq: "{!terms f=isPartOf_ssim}xyz123,yyx123,zxy123",
-                                                                  "facet.field" => "isPartOf_ssim" }).and_return(results)
+                                                                  "facet.field" => "isPartOf_ssim", rows: 0 }).and_return(results)
+      allow(connection).to receive(:get).with("select", params: { fq: ["{!join from=file_set_ids_ssim to=id}isPartOf_ssim:xyz123", "has_model_ssim:FileSet"], rows: 0 }).and_return(xyz123_file_results)
+      allow(connection).to receive(:get).with("select", params: { fq: ["{!join from=file_set_ids_ssim to=id}isPartOf_ssim:yyx123", "has_model_ssim:FileSet"], rows: 0 }).and_return(yyx123_file_results)
+      allow(connection).to receive(:get).with("select", params: { fq: ["{!join from=file_set_ids_ssim to=id}isPartOf_ssim:zxy123", "has_model_ssim:FileSet"], rows: 0 }).and_return(zxy123_file_results)
     end
 
     context "when there are works in the admin set" do
+      let(:xyz123_files) { '3' }
+      let(:yyx123_files) { '2' }
+      let(:zxy123_files) { '0' }
+
       it "returns rows with document in the first column and integer count value in the second and third column" do
         expect(subject).to eq [struct.new(doc1, 8, 3), struct.new(doc2, 2, 2), struct.new(doc3, 0, 0)]
       end
     end
 
     context "when there are no files in the admin set" do
-      let(:document_list) do
-        [
-          {
-            'isPartOf_ssim' => ['xyz123']
-          },
-          {
-            'isPartOf_ssim' => ['xyz123', 'yyx123']
-          }
-        ]
-      end
+      let(:xyz123_files) { '0' }
+      let(:yyx123_files) { '0' }
+      let(:zxy123_files) { '0' }
 
       it "returns rows with document in the first column and integer count value in the second and third column" do
         expect(subject).to eq [struct.new(doc1, 8, 0), struct.new(doc2, 2, 0), struct.new(doc3, 0, 0)]
