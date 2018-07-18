@@ -6,6 +6,10 @@ module Hyrax
     helper Hyrax::TrophyHelper
 
     def index
+      if Flipflop.hide_users_list?
+        authenticate_user!
+        raise Hydra::AccessDenied unless current_ability.admin?
+      end
       @users = search(params[:uq])
     end
 
