@@ -240,6 +240,10 @@ Hyrax.config do |config|
   # Location where BagIt files should be exported
   # config.bagit_dir = "tmp/descriptions"
 
+  # By default only admins can view the user list
+  # Set to true to allow registered users access as well
+  # config.registered_users_can_view_users_list = false
+
   # If browse-everything has been configured, load the configs.  Otherwise, set to nil.
   begin
     if defined? BrowseEverything

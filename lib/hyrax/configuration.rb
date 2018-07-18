@@ -296,6 +296,11 @@ module Hyrax
       @arkivo_api ||= false
     end
 
+    attr_writer :registered_users_can_view_users_list
+    def registered_users_can_view_users_list?
+      @registered_users_can_view_users_list ||= false
+    end
+
     # rubocop:disable Metrics/LineLength
     attr_writer :realtime_notifications
     def realtime_notifications?

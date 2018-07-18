@@ -8,7 +8,7 @@ module Hyrax
     def index
       if Flipflop.hide_users_list?
         authenticate_user!
-        raise Hydra::AccessDenied unless current_ability.admin?
+        raise Hydra::AccessDenied unless current_ability.admin? || Hyrax.config.registered_users_can_view_users_list?
       end
       @users = search(params[:uq])
     end
