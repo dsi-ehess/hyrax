@@ -1,7 +1,10 @@
 RSpec.describe Hyrax::UsersController, type: :controller do
   let(:user) { create(:user) }
 
-  before { sign_in user }
+  before do
+    sign_in user
+    allow(Flipflop).to receive(:hide_users_list?).and_return(false)
+  end
 
   describe "#show" do
     it "show the user profile if user exists" do
@@ -87,6 +90,88 @@ RSpec.describe Hyrax::UsersController, type: :controller do
         expect(assigns[:users]).to include(u3)
         expect(assigns[:users]).not_to include(u1, u2)
         u3.destroy
+      end
+    end
+  end
+
+  describe 'user list access' do
+    context 'with hide_users_list?=enabled' do
+      before do
+        allow(Flipflop).to receive(:hide_users_list?).and_return(true)
+      end
+
+      context 'with registered_users_can_view_users_list?=disabled' do
+        before do
+          allow(Hyrax.config).to receive(:registered_users_can_view_users_list?).and_return(false)
+        end
+
+        describe 'with registered user' do
+          it 'does not render the user list' do
+            get :index
+            expect(flash[:alert]).to eq 'You are not authorized to access this page.'
+            expect(response).to have_http_status(302)
+            expect(response).to redirect_to(root_path)
+          end
+        end
+
+        describe 'with unauthenticated user' do
+          before do
+            sign_out user
+          end
+
+          it 'does not render the user list' do
+            get :index
+            expect(flash[:alert]).to eq 'You need to sign in or sign up before continuing.'
+            expect(response).to have_http_status(302)
+            expect(response).to redirect_to('/users/sign_in')
+          end
+        end
+
+        describe 'with admin user' do
+          let(:admin_user) { create(:admin, email: 'admin@example.com') }
+          before do
+            sign_out user
+            sign_in admin_user
+          end
+
+          it 'renders the user list' do
+            get :index
+            expect(response.code).to eq '200'
+            expect(response).to render_template(:index)
+          end
+        end
+      end
+
+      context 'with registered_users_can_view_users_list?=enabled' do
+        before do
+          allow(Hyrax.config).to receive(:registered_users_can_view_users_list?).and_return(true)
+        end
+
+        describe 'with registered user' do
+          it 'renders the user list' do
+            get :index
+            expect(response.code).to eq '200'
+            expect(response).to render_template(:index)
+          end
+        end
+      end
+    end
+
+    context 'with hide_users_list?=disabled' do
+      before do
+        allow(Flipflop).to receive(:hide_users_list?).and_return(false)
+      end
+
+      describe 'with unauthenticated user' do
+        before do
+          sign_out user
+        end
+
+        it 'renders the user list' do
+          get :index
+          expect(response.code).to eq '200'
+          expect(response).to render_template(:index)
+        end
       end
     end
   end

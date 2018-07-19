@@ -31,8 +31,13 @@ RSpec.describe "User Profile", type: :feature do
   end
 
   context 'user profile' do
+    let(:admin_user) { create(:admin, email: 'admin@example.com') }
     let!(:dewey) { create(:user, display_name: 'Melvil Dewey') }
     let(:dewey_path) { Hyrax::Engine.routes.url_helpers.user_path(dewey, locale: 'en') }
+
+    before do
+      sign_in admin_user
+    end
 
     it 'is searchable' do
       visit profile_path

@@ -41,5 +41,5 @@ Flipflop.configure do
 
   feature :hide_users_list,
           default: true,
-          description: "Do not show the users list unless authenticated."
+          description: "Do not show users list unless viewer has authenticated. Defaults to admin access but can be configured to allow registered user access in the Hyrax initializer."
 end
